@@ -27,12 +27,12 @@ const AdminDashboardLayout = () => {
     email: "",
     nationalId: "",
     password: "",
-    biometricData: ""
+    biometricData: "",
   });
   const [agentCount, setAgentCount] = useState(0);
   const [stockCount, setStockCount] = useState(0);
   const [editingAgent, setEditingAgent] = useState(null);
-  const [loading, setLoading] = useState(false); // Loading state
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -58,7 +58,7 @@ const AdminDashboardLayout = () => {
     setOpenMenu(openMenu === menu ? null : menu);
   };
 
-  /** Fetch agents */
+  // Fetch agents
   const fetchAgents = async () => {
     const response = await fetch("http://localhost:5000/agents");
     const data = await response.json();
@@ -66,7 +66,7 @@ const AdminDashboardLayout = () => {
     setAgentCount(data.length);
   };
 
-  /** Fetch stock */
+  // Fetch stock
   const fetchStocks = async () => {
     const response = await fetch("http://localhost:5000/stock");
     const data = await response.json();
@@ -74,31 +74,36 @@ const AdminDashboardLayout = () => {
     setStockCount(data.length);
   };
 
-  /** Handle stock input changes */
+  // Handle stock input changes
   const handleStockInputChange = (e) => {
     setStockData({ ...stockData, [e.target.name]: e.target.value });
   };
 
-  /** Add stock */
-  const handleAddStock = async (e) => {
+  // Add or update stock
+  const handleAddOrUpdateStock = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:5000/stock", {
-        method: "POST",
+      const url = editingStock
+        ? `http://localhost:5000/stock/${editingStock.id}`
+        : "http://localhost:5000/stock";
+      const method = editingStock ? "PUT" : "POST";
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(stockData),
       });
       const data = await response.json();
       alert(data.message);
       setStockData({ product_name: "", quantity: "", price: "" });
+      setEditingStock(null);
       fetchStocks();
     } catch (error) {
-      console.error("Error adding stock:", error);
-      alert("Error adding stock: " + error.message);
+      console.error("Error saving stock:", error);
+      alert("Error saving stock: " + error.message);
     }
   };
 
-  /** Delete stock */
+  // Delete stock
   const handleDeleteStock = async (id) => {
     if (!window.confirm("Are you sure you want to delete this stock item?")) return;
     try {
@@ -111,56 +116,42 @@ const AdminDashboardLayout = () => {
     }
   };
 
-  /** Start editing stock */
+  // Start editing stock
   const handleEditStock = (stock) => {
     setEditingStock(stock);
     setStockData({ product_name: stock.product_name, quantity: stock.quantity, price: stock.price });
   };
 
-  /** Update stock */
-  const handleUpdateStock = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch(`http://localhost:5000/stock/${editingStock.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(stockData),
-      });
-      if (!response.ok) throw new Error("Failed to update stock");
-      alert("Stock updated successfully");
-      setEditingStock(null);
-      setStockData({ product_name: "", quantity: "", price: "" });
-      fetchStocks();
-    } catch (error) {
-      console.error("Error updating stock:", error);
-      alert("Error updating stock: " + error.message);
-    }
-  };
-
-  /** Handle agent input changes */
+  // Handle agent input changes
   const handleInputChange = (e) => {
     setAgentData({ ...agentData, [e.target.name]: e.target.value, password: agentData.nationalId });
   };
 
-  /** Register agent */
-  const handleRegisterAgent = async (e) => {
+  // Register or update agent
+  const handleRegisterOrUpdateAgent = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:5000/register", {
-        method: "POST",
+      const url = editingAgent
+        ? `http://localhost:5000/agents/${editingAgent.id}`
+        : "http://localhost:5000/register";
+      const method = editingAgent ? "PUT" : "POST";
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...agentData, role: "agent" })
+        body: JSON.stringify({ ...agentData, role: "agent" }),
       });
       const data = await response.json();
       alert(data.message);
+      setAgentData({ name: "", email: "", nationalId: "", password: "" });
+      setEditingAgent(null);
       fetchAgents();
     } catch (error) {
-      console.error("Error registering agent:", error);
-      alert("Registration failed: " + error.message);
+      console.error("Error saving agent:", error);
+      alert("Error saving agent: " + error.message);
     }
   };
 
-  /** Delete agent */
+  // Delete agent
   const handleDeleteAgent = async (id) => {
     if (!window.confirm("Are you sure you want to delete this agent?")) return;
     try {
@@ -173,35 +164,20 @@ const AdminDashboardLayout = () => {
     }
   };
 
-  /** Start editing agent */
+  // Start editing agent
   const handleEditAgent = (agent) => {
     setEditingAgent(agent);
-    setAgentData({ name: agent.name, email: agent.email, nationalId: agent.nationalId });
+    setAgentData({
+      name: agent.name,
+      email: agent.email,
+      nationalId: agent.nationalId,
+      password: agent.nationalId,
+    });
   };
 
-  /** Update agent */
-  const handleUpdateAgent = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch(`http://localhost:5000/agents/${editingAgent.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(agentData),
-      });
-      if (!response.ok) throw new Error("Failed to update agent");
-      alert("Agent updated successfully");
-      setEditingAgent(null);
-      setAgentData({ name: "", email: "", nationalId: "" });
-      fetchAgents();
-    } catch (error) {
-      console.error("Error updating agent:", error);
-      alert("Error updating agent: " + error.message);
-    }
-  };
-
-  /** Render components based on active state */
+  // Render components based on active state
   const renderContent = () => {
-    if (loading) return <div>Loading...</div>; // Loading state
+    if (loading) return <div>Loading...</div>;
 
     switch (activeComponent) {
       case "Dashboard":
@@ -224,15 +200,38 @@ const AdminDashboardLayout = () => {
       case "RegisterAgent":
         return (
           <div>
-            <h2>Register Agent</h2>
-            <form className="form-container" onSubmit={handleRegisterAgent}>
+            <h2>{editingAgent ? "Edit Agent" : "Register Agent"}</h2>
+            <form className="form-container" onSubmit={handleRegisterOrUpdateAgent}>
               <label>Name:</label>
-              <input type="text" name="name" placeholder="Enter agent name" onChange={handleInputChange} required />
+              <input
+                type="text"
+                name="name"
+                placeholder="Enter agent name"
+                value={agentData.name}
+                onChange={handleInputChange}
+                required
+              />
               <label>Email:</label>
-              <input type="email" name="email" placeholder="Enter agent email" onChange={handleInputChange} required />
+              <input
+                type="email"
+                name="email"
+                placeholder="Enter agent email"
+                value={agentData.email}
+                onChange={handleInputChange}
+                required
+              />
               <label>National ID:</label>
-              <input type="text" name="nationalId" placeholder="Enter National ID" onChange={handleInputChange} required />
-              <button type="submit" className="btn">Register</button>
+              <input
+                type="text"
+                name="nationalId"
+                placeholder="Enter National ID"
+                value={agentData.nationalId}
+                onChange={handleInputChange}
+                required
+              />
+              <button type="submit" className="btn">
+                {editingAgent ? "Update Agent" : "Register"}
+              </button>
             </form>
           </div>
         );
@@ -272,8 +271,8 @@ const AdminDashboardLayout = () => {
       case "AddStock":
         return (
           <div>
-            <h2>{editingStock ? "Update Stock" : "Add Stock"}</h2>
-            <form className="form-container" onSubmit={editingStock ? handleUpdateStock : handleAddStock}>
+            <h2>{editingStock ? "Edit Stock" : "Add Stock"}</h2>
+            <form className="form-container" onSubmit={handleAddOrUpdateStock}>
               <label>Stock Name:</label>
               <input
                 type="text"
@@ -301,7 +300,9 @@ const AdminDashboardLayout = () => {
                 onChange={handleStockInputChange}
                 required
               />
-              <button type="submit" className="btn">{editingStock ? "Update Stock" : "Add Stock"}</button>
+              <button type="submit" className="btn">
+                {editingStock ? "Update Stock" : "Add Stock"}
+              </button>
             </form>
           </div>
         );
