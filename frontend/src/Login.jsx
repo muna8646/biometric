@@ -50,9 +50,13 @@ const App = () => {
         fingerprint: fingerprintData,
       });
 
-      if (response.data.role === 'admin') {
+      console.log("🛠 Role received from fingerprint login:", response.data.role);
+
+      if (response.data.role?.trim().toLowerCase() === 'admin') {
+        console.log("🔹 Navigating to Admin Dashboard");
         navigate('/admin-dashboard');
       } else {
+        console.log("🔹 Navigating to Agent Dashboard");
         navigate('/agent-dashboard');
       }
 
@@ -74,10 +78,13 @@ const App = () => {
       });
 
       console.log("✅ Login Success:", response.data);
+      console.log("🛠 Role received from email login:", response.data.role);
 
-      if (response.data.role === 'admin') {
+      if (response.data.role?.trim().toLowerCase() === 'admin') {
+        console.log("🔹 Navigating to Admin Dashboard");
         navigate('/admin-dashboard');
       } else {
+        console.log("🔹 Navigating to Agent Dashboard");
         navigate('/agent-dashboard');
       }
 

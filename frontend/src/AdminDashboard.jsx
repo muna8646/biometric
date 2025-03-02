@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom';
 import {
   Bell,
   ChevronDown,
@@ -34,6 +35,14 @@ const AdminDashboardLayout = () => {
   const [editingAgent, setEditingAgent] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const navigate = useNavigate(); // Initialize useNavigate
+    
+  // Function to handle logout
+  const handleLogout = () => {
+    // Perform any logout logic here (e.g., clearing local storage)
+    navigate("/"); // Redirect to the home page
+  };
+
   useEffect(() => {
     fetchData();
   }, [activeComponent]);
@@ -60,18 +69,34 @@ const AdminDashboardLayout = () => {
 
   // Fetch agents
   const fetchAgents = async () => {
-    const response = await fetch("http://localhost:5000/agents");
-    const data = await response.json();
-    setAgents(data);
-    setAgentCount(data.length);
+    try {
+      const response = await fetch("http://localhost:5000/agents");
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+      setAgents(data);
+      setAgentCount(data.length);
+    } catch (error) {
+      console.error("Failed to fetch agents:", error);
+      alert("Failed to fetch agents: " + error.message);
+    }
   };
 
   // Fetch stock
   const fetchStocks = async () => {
-    const response = await fetch("http://localhost:5000/stock");
-    const data = await response.json();
-    setStocks(data);
-    setStockCount(data.length);
+    try {
+      const response = await fetch("http://localhost:5000/stock");
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+      setStocks(data);
+      setStockCount(data.length);
+    } catch (error) {
+      console.error("Failed to fetch stocks:", error);
+      alert("Failed to fetch stocks: " + error.message);
+    }
   };
 
   // Handle stock input changes
@@ -92,6 +117,9 @@ const AdminDashboardLayout = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(stockData),
       });
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
       const data = await response.json();
       alert(data.message);
       setStockData({ product_name: "", quantity: "", price: "" });
@@ -108,7 +136,9 @@ const AdminDashboardLayout = () => {
     if (!window.confirm("Are you sure you want to delete this stock item?")) return;
     try {
       const response = await fetch(`http://localhost:5000/stock/${id}`, { method: "DELETE" });
-      if (!response.ok) throw new Error("Failed to delete stock");
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
       fetchStocks();
     } catch (error) {
       console.error("Error deleting stock:", error);
@@ -135,11 +165,19 @@ const AdminDashboardLayout = () => {
         ? `http://localhost:5000/agents/${editingAgent.id}`
         : "http://localhost:5000/register";
       const method = editingAgent ? "PUT" : "POST";
+      const agentDataToSend = { ...agentData, role: "agent" };
+      if (editingAgent) {
+        // Ensure password matches nationalId when editing
+        agentDataToSend.password = agentData.nationalId;
+      }
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...agentData, role: "agent" }),
+        body: JSON.stringify(agentDataToSend),
       });
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
       const data = await response.json();
       alert(data.message);
       setAgentData({ name: "", email: "", nationalId: "", password: "" });
@@ -155,9 +193,13 @@ const AdminDashboardLayout = () => {
   const handleDeleteAgent = async (id) => {
     if (!window.confirm("Are you sure you want to delete this agent?")) return;
     try {
-      const response = await fetch(`http://localhost:5000/agents/${id}`, { method: "DELETE" });
-      if (!response.ok) throw new Error("Failed to delete agent");
-      fetchAgents();
+      const response = await fetch(`http://localhost:5000/agents/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      await fetchAgents(); // Refresh agents after deletion
     } catch (error) {
       console.error("Error deleting agent:", error);
       alert("Error deleting agent: " + error.message);
@@ -171,7 +213,7 @@ const AdminDashboardLayout = () => {
       name: agent.name,
       email: agent.email,
       nationalId: agent.nationalId,
-      password: agent.nationalId,
+      password: agent.nationalId, // Set password to nationalId for editing
     });
   };
 
@@ -385,9 +427,9 @@ const AdminDashboardLayout = () => {
               </div>
             )}
           </div>
-          <span className="menu-item" onClick={() => setActiveComponent("Settings")}>
-            <Settings className="icon" size={18} />
-            Settings
+          <span className="menu-item" onClick={handleLogout}>
+            <LogOut className="icon" size={18} />
+            Logout
           </span>
         </nav>
       </aside>

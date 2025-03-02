@@ -74,11 +74,7 @@ app.post('/login', async (req, res) => {
 
         res.json({
             message: 'Login successful',
-            user: {
-                id: user.id,
-                email: user.email,
-                role: user.role
-            }
+            role: user.role // Sending role directly to match frontend expectation
         });
 
     } catch (error) {
@@ -86,6 +82,7 @@ app.post('/login', async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
 
 // Get All Agents
 app.get("/agents", async (req, res) => {
